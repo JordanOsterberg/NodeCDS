@@ -1,0 +1,73 @@
+<html>
+    <head>
+        <style>
+            * {
+                font-family: sans-serif;
+            }
+        </style>
+    </head>
+
+    <body>
+        <form id="upload_form" enctype="multipart/form-data" method="post">
+            <h2>Video Upload</h2>
+            <input type="file" name="file" id="file" onchange="uploadFile()"><br>
+            <progress id="progressBar" value="0" max="100" style="width:300px;"></progress>
+            <h3 id="status"></h3>
+        </form>
+
+        <div id="videoPlayerHolder" style="display: none;">
+            <video id="videoPlayer" controls>
+              <source id="videoPlayerSource" src="" type="video/mp4">
+            Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <script>
+            function _(el) {
+                return document.getElementById(el);
+            }
+
+            function uploadFile() {
+                var file = _("file").files[0];
+                // alert(file.name+" | "+file.size+" | "+file.type);
+                var formdata = new FormData();
+                formdata.append("file", file);
+                var ajax = new XMLHttpRequest();
+                ajax.upload.addEventListener("progress", progressHandler, false);
+                ajax.addEventListener("load", completeHandler, false);
+                ajax.addEventListener("error", errorHandler, false);
+                ajax.addEventListener("abort", abortHandler, false);
+                ajax.open("POST", "http://localhost:4000/upload");
+
+                ajax.send(formdata);
+            }
+
+            function progressHandler(event) {
+                var percent = (event.loaded / event.total) * 100;
+                _("progressBar").value = Math.round(percent);
+                _("status").innerHTML = Math.round(percent) + "% uploaded... please wait";
+            }
+
+            function completeHandler(event) {
+                var json = JSON.parse(event.target.responseText);
+                if (json.url !== undefined) {
+                    _("upload_form").style.display = "none";
+                    _("videoPlayerHolder").style.display = "block";
+
+                    _("videoPlayerSource").src = json.url;
+                    _("videoPlayer").play();
+                }
+
+                _("progressBar").value = 100;
+            }
+
+            function errorHandler(event) {
+                _("status").innerHTML = "Upload Failed";
+            }
+
+            function abortHandler(event) {
+                _("status").innerHTML = "Upload Aborted";
+            }
+        </script>
+    </body>
+</html>
